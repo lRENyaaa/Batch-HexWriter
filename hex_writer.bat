@@ -1,4 +1,4 @@
-@echo off
+@if "%DEBUG%" == "" echo off
 REM ==============================================================================
 REM  hex_writer.bat — Pure batch PE executable writer (zero external dependencies)
 REM
@@ -305,7 +305,7 @@ REM Use the just-built exe to generate a 0-255 test file
 
 echo [%time%] Write %targetName% Done.
 echo [%time%] Press any key to exit...
-pause >nul
+if "%NOPAUSE%" == "" pause >nul
 
 goto :eof
 

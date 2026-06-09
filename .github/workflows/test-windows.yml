@@ -1,0 +1,61 @@
+name: Compatibility Test
+
+on:
+  push:
+    branches: [master, main]
+
+jobs:
+  test-hex-writer:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-2022
+          - windows-2025
+          - windows-latest
+        script:
+          - hex_writer.bat
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display environment info
+        shell: cmd
+        run: |
+          ver
+          chcp
+
+      - name: Run ${{ matrix.script }} (build exe + test write)
+        shell: powershell
+        run: |
+          $env:NOPAUSE = "1"
+          cmd /c "call ${{ matrix.script }}"
+
+      - name: Verify ByteAppender.exe size
+        shell: powershell
+        run: |
+          $size = (Get-Item "ByteAppender.exe").Length
+          if ($size -ne 1536) {
+            Write-Error "ByteAppender.exe size is $size bytes, expected 1536"
+            exit 1
+          }
+          Write-Host "ByteAppender.exe size verified: $size bytes"
+
+      - name: Verify 0-255.bin content
+        shell: powershell
+        run: |
+          $bytes = [System.IO.File]::ReadAllBytes("0-255.bin")
+          if ($bytes.Length -ne 256) {
+            Write-Error "0-255.bin size is $($bytes.Length) bytes, expected 256"
+            exit 1
+          }
+          for ($i = 0; $i -lt 256; $i++) {
+            if ($bytes[$i] -ne $i) {
+              Write-Error "Byte at offset $i is $($bytes[$i]), expected $i"
+              exit 1
+            }
+          }
+          Write-Host "0-255.bin content verified: all 256 bytes correct"
